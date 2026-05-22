@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>产品市场调研工具</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Inter","PingFang SC","Microsoft YaHei",sans-serif; background:#f4f7fb; color:#0f172a; min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+.header { background:linear-gradient(135deg,#7c3aed 0%,#a855f7 50%,#6366f1 100%); color:white; padding:24px 0; text-align:center; position:sticky; top:0; z-index:100; box-shadow:0 4px 24px rgba(124,58,237,0.25); }
+.header h1 { font-size:24px; font-weight:800; }
+.header p { font-size:13px; opacity:0.85; margin-top:4px; }
+
+.main { max-width:960px; margin:0 auto; padding:20px 16px 60px; }
+
+.card { background:white; border-radius:16px; padding:24px; margin-bottom:16px; box-shadow:0 2px 12px rgba(0,0,0,0.05); border:1px solid #e8ecf1; }
+.card-title { font-size:16px; font-weight:700; color:#4c1d95; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+
+.form-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.form-group { flex:1; min-width:180px; }
+.form-group.full { flex:100%; min-width:100%; }
+.form-group.half { flex:1; min-width:140px; }
+.form-group label { display:block; font-size:12px; color:#64748b; margin-bottom:5px; font-weight:600; }
+.form-group label .req { color:#ef4444; }
+.form-group input,.form-group textarea,.form-group select {
+  width:100%; padding:10px 12px; border:2px solid #e2e8f0; border-radius:10px;
+  font-size:14px; font-weight:500; transition:all 0.2s; background:#f8fafc; outline:none; font-family:inherit;
+}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus { border-color:#7c3aed; background:white; box-shadow:0 0 0 3px rgba(124,58,237,0.1); }
+.form-group .hint { font-size:11px; color:#94a3b8; margin-top:3px; }
+
+/* 品类选择美化 */
+.cat-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
+.cat-group { flex:1; min-width:140px; }
+.cat-group label { display:block; font-size:12px; color:#64748b; margin-bottom:5px; font-weight:600; }
+.cat-group select { width:100%; padding:10px 12px; border:2px solid #e2e8f0; border-radius:10px; font-size:14px; font-weight:500; transition:all 0.2s; background:#f8fafc; outline:none; }
+.cat-group select:focus { border-color:#7c3aed; background:white; box-shadow:0 0 0 3px rgba(124,58,237,0.1); }
+.cat-group select:disabled { opacity:0.5; cursor:not-allowed; }
+.cat-preview { font-size:12px; color:#7c3aed; margin-bottom:14px; min-height:18px; font-weight:500; }
+.cat-preview span { background:#f5f3ff; padding:3px 10px; border-radius:6px; border:1px solid #ede9fe; }
+
+/* 调研目的卡片 */
+.purpose-opt { flex:1; min-width:160px; cursor:pointer; }
+.purpose-opt input { display:none; }
+.purpose-card { display:flex; flex-direction:column; gap:2px; padding:12px 14px; border:2px solid #e2e8f0; border-radius:12px; background:#f8fafc; transition:all 0.2s; position:relative; }
+.purpose-card .p-icon { font-size:22px; }
+.purpose-card b { font-size:14px; color:#1e293b; }
+.purpose-card small { font-size:11px; color:#94a3b8; line-height:1.4; }
+.purpose-opt input:checked + .purpose-card { border-color:#7c3aed; background:#f5f3ff; box-shadow:0 2px 8px rgba(124,58,237,0.15); }
+.purpose-opt input:checked + .purpose-card b { color:#5b21b6; }
+.purpose-opt input:checked + .purpose-card::after { content:'✓'; position:absolute; top:8px; right:10px; color:#7c3aed; font-weight:700; font-size:14px; }
+
+/* 参数标签 */
+.param-tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.param-tag { display:flex; align-items:center; gap:4px; padding:6px 12px; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px; font-size:13px; color:#5b21b6; }
+.param-tag input { border:none; background:transparent; font-size:13px; font-weight:600; color:#5b21b6; outline:none; width:80px; padding:0; }
+.param-tag input::placeholder { color:#a78bfa; font-weight:400; }
+.param-tag .del { cursor:pointer; color:#a78bfa; font-size:16px; margin-left:2px; }
+.param-tag .del:hover { color:#ef4444; }
+.add-param { padding:6px 14px; background:white; border:1px dashed #c4b5fd; border-radius:8px; font-size:13px; color:#7c3aed; cursor:pointer; font-weight:600; transition:all 0.2s; }
+.add-param:hover { background:#f5f3ff; border-color:#7c3aed; }
+
+.hidden { display:none !important; }
+
+/* 步骤 */
+.steps { display:flex; gap:0; margin-bottom:20px; }
+.step { flex:1; text-align:center; padding:14px 8px; position:relative; }
+.step .num { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:#e2e8f0; color:#94a3b8; font-size:14px; font-weight:700; margin-bottom:6px; transition:all 0.3s; }
+.step .txt { font-size:12px; color:#94a3b8; font-weight:600; }
+.step.active .num { background:#7c3aed; color:white; }
+.step.active .txt { color:#4c1d95; }
+.step.done .num { background:#22c55e; color:white; }
+.step.done .txt { color:#166534; }
+.step::after { content:''; position:absolute; top:28px; right:-10%; width:20%; height:3px; background:#e2e8f0; }
+.step:last-child::after { display:none; }
+.step.done::after { background:#22c55e; }
+.step.active::after { background:#7c3aed; }
+
+/* 按钮 */
+.btn { display:block; width:100%; padding:14px; border:none; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; transition:all 0.3s; letter-spacing:1px; }
+.btn:hover { transform:translateY(-1px); }
+.btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+.btn-purple { background:linear-gradient(135deg,#7c3aed,#a855f7); color:white; }
+.btn-purple:hover { box-shadow:0 6px 20px rgba(124,58,237,0.3); }
+.btn-green { background:linear-gradient(135deg,#059669,#34d399); color:white; }
+.btn-green:hover { box-shadow:0 6px 20px rgba(5,150,105,0.3); }
+
+/* 提问词 */
+.prompt-box { background:#1e1b4b; color:#e2e8f0; border-radius:12px; padding:18px; font-size:13px; line-height:1.8; white-space:pre-wrap; word-break:break-word; max-height:400px; overflow-y:auto; font-family:'SF Mono','Menlo',monospace; }
+.copy-btn { display:inline-flex; align-items:center; gap:6px; padding:10px 24px; background:#7c3aed; color:white; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; margin-top:12px; transition:all 0.2s; }
+.copy-btn:hover { background:#6d28d9; }
+.copy-btn.copied { background:#22c55e; }
+
+.ai-links { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.ai-link { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; color:#334155; text-decoration:none; font-weight:600; transition:all 0.2s; }
+.ai-link:hover { border-color:#7c3aed; background:#f5f3ff; color:#5b21b6; }
+
+.tip-box { margin-top:16px; padding:12px; background:#fefce8; border:1px solid #fde68a; border-radius:10px; font-size:12px; color:#92400e; line-height:1.7; }
+
+.paste-area { width:100%; min-height:300px; padding:16px; border:2px dashed #c4b5fd; border-radius:12px; font-size:13px; line-height:1.8; background:#faf5ff; outline:none; font-family:inherit; resize:vertical; }
+.paste-area:focus { border-color:#7c3aed; border-style:solid; background:white; }
+
+/* 报告 */
+.rpt-head { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+.rpt-head h2 { font-size:20px; color:#4c1d95; }
+.rpt-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.rpt-btn { padding:8px 16px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid #d1d5db; background:white; color:#475569; }
+.rpt-btn:hover { background:#f1f5f9; }
+.rpt-btn.primary { background:#7c3aed; color:white; border-color:#7c3aed; }
+.rpt-btn.primary:hover { background:#6d28d9; }
+
+.section { margin-bottom:14px; border:1px solid #e8ecf1; border-radius:12px; overflow:hidden; }
+.sec-hd { padding:14px 18px; background:#faf5ff; border-bottom:1px solid #ede9fe; display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+.sec-hd:hover { background:#f5f3ff; }
+.sec-hd h3 { font-size:14px; font-weight:700; color:#4c1d95; flex:1; }
+.sec-hd .arr { font-size:12px; color:#a78bfa; }
+.sec-bd { padding:18px; font-size:13px; color:#334155; line-height:1.9; }
+.sec-bd.off { display:none; }
+.sec-bd h4 { font-size:13px; color:#4c1d95; margin:12px 0 4px; }
+.sec-bd ul,.sec-bd ol { padding-left:20px; margin:6px 0; }
+.sec-bd li { margin:4px 0; }
+.sec-bd p { margin:6px 0; }
+.sec-bd strong { color:#1e293b; }
+.sec-bd table { width:100%; border-collapse:collapse; margin:8px 0; font-size:12px; }
+.sec-bd table th { background:#f5f3ff; padding:8px; text-align:left; border:1px solid #ede9fe; font-weight:600; color:#4c1d95; }
+.sec-bd table td { padding:8px; border:1px solid #e2e8f0; }
+
+.tag { display:inline-block; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:600; }
+.tag.red { background:#fee2e2; color:#991b1b; }
+.tag.yellow { background:#fef9c3; color:#854d0e; }
+.tag.green { background:#dcfce7; color:#166534; }
+.tag.purple { background:#f3e8ff; color:#6b21a8; }
+
+.disclaimer { font-size:11px; color:#94a3b8; background:#f8fafc; padding:12px; border-radius:8px; margin-top:16px; line-height:1.7; }
+.footer { text-align:center; font-size:11px; color:#94a3b8; padding:20px; }
+
+.nav-btns { display:flex; gap:10px; margin-top:16px; }
+.nav-btns .btn { flex:1; }
+
+@media (max-width:640px) {
+  .form-row,.cat-row { flex-direction:column; }
+  .form-group,.form-group.half,.cat-group { min-width:100%; }
+  .step .txt { font-size:10px; }
+}
+@media print {
+  .header,.steps,.footer,.rpt-actions,.nav-btns,#step1Card,#step2Card,#step3Card { display:none !important; }
+  #rptCard { display:block !important; }
+  .sec-bd.off { display:block !important; }
+  body { background:white; }
+  .card { box-shadow:none; border:1px solid #ddd; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔬 产品市场调研工具</h1>
+  <p>竞品分析 · 卖点提炼 · 定价参考 · 开发方向建议</p>
+</div>
+
+<div class="main">
+
+  <!-- 步骤 -->
+  <div class="steps">
+    <div class="step active" id="s1"><div class="num">1</div><div class="txt">填写产品信息</div></div>
+    <div class="step" id="s2"><div class="num">2</div><div class="txt">复制到 AI 获取回答</div></div>
+    <div class="step" id="s3"><div class="num">3</div><div class="txt">粘贴生成报告</div></div>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="card" id="step1Card">
+    <div class="card-title">📝 第一步：填写产品和市场信息</div>
+
+    <!-- 两级品类选择 -->
+    <div class="cat-row">
+      <div class="cat-group">
+        <label>大品类 <span class="req" style="color:#ef4444">*</span></label>
+        <select id="iCatMain"><option value="">-- 请选择大品类 --</option></select>
+      </div>
+      <div class="cat-group">
+        <label>子品类 <span class="req" style="color:#ef4444">*</span></label>
+        <select id="iCatSub" disabled><option value="">-- 请先选择大品类 --</option></select>
+      </div>
+    </div>
+    <div class="cat-preview" id="catPreview"></div>
+
+    <!-- 调研目的（必选，影响提示词结构） -->
+    <div class="form-row">
+      <div class="form-group full">
+        <label>调研目的 <span class="req">*</span></label>
+        <div id="purposeBox" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <label class="purpose-opt" data-val="basic">
+            <input type="radio" name="purpose" value="basic" checked>
+            <span class="purpose-card">
+              <span class="p-icon">📚</span>
+              <b>基础调研</b>
+              <small>全面了解品类市场、竞品、趋势</small>
+            </span>
+          </label>
+          <label class="purpose-opt" data-val="develop">
+            <input type="radio" name="purpose" value="develop">
+            <span class="purpose-card">
+              <span class="p-icon">🚀</span>
+              <b>新品开发</b>
+              <small>抓机会点、痛点、差异化方向</small>
+            </span>
+          </label>
+          <label class="purpose-opt" data-val="target">
+            <input type="radio" name="purpose" value="target">
+            <span class="purpose-card">
+              <span class="p-icon">🎯</span>
+              <b>客户/竞品抓取</b>
+              <small>锁定具体客户/零售商在卖什么</small>
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group half">
+        <label>目标市场 <span class="req">*</span></label>
+        <select id="iMarketSel">
+          <option value="">-- 请选择 --</option>
+          <option value="美国">🇺🇸 美国</option>
+          <option value="欧洲">🇪🇺 欧洲（综合）</option>
+          <option value="德国">🇩🇪 德国</option>
+          <option value="英国">🇬🇧 英国</option>
+          <option value="法国">🇫🇷 法国</option>
+          <option value="日本">🇯🇵 日本</option>
+          <option value="韩国">🇰🇷 韩国</option>
+          <option value="澳大利亚">🇦🇺 澳大利亚</option>
+          <option value="加拿大">🇨🇦 加拿大</option>
+          <option value="东南亚">🌏 东南亚</option>
+          <option value="中东">🌍 中东</option>
+          <option value="南美">🌎 南美</option>
+          <option value="__custom__">✏️ 手动输入其他市场...</option>
+        </select>
+        <input type="text" id="iMarketCustom" class="hidden" placeholder="请输入目标市场，如：俄罗斯、巴西" style="margin-top:6px;">
+      </div>
+      <div class="form-group half">
+        <label>具体产品描述（选填）</label>
+        <input type="text" id="iCatDetail" placeholder="如：迷你桌面加湿器、竹制收纳架">
+        <div class="hint">补充具体产品名称，让调研更精准</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group half">
+        <label>品名/英文名（选填）</label>
+        <input type="text" id="iName" placeholder="如：Mini Desktop Humidifier">
+      </div>
+      <div class="form-group half">
+        <label>材质（选填）</label>
+        <input type="text" id="iMaterial" placeholder="如：ABS+PP、天然竹材">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group half">
+        <label>尺寸规格（选填）</label>
+        <input type="text" id="iSize" placeholder="如：30×20×15cm">
+      </div>
+      <div class="form-group half">
+        <label>预估出厂价（选填）</label>
+        <input type="text" id="iPrice" placeholder="如：¥35 / $5.00">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group half">
+        <label>目标销售渠道（选填）</label>
+        <select id="iChannel">
+          <option value="">不限</option>
+          <option value="Amazon">Amazon</option>
+          <option value="线下零售/超市（Walmart/Action/Costco等）">线下零售/超市</option>
+          <option value="独立站/DTC">独立站/DTC</option>
+          <option value="批发/B2B">批发/B2B</option>
+          <option value="日本市场（乐天/Yahoo）">日本市场</option>
+          <option value="东南亚（Shopee/Lazada）">东南亚电商</option>
+        </select>
+      </div>
+      <div class="form-group half">
+        <label>目标定位（选填）</label>
+        <select id="iPosition">
+          <option value="">不限</option>
+          <option value="高端/Premium">高端/Premium</option>
+          <option value="中端/性价比">中端/性价比</option>
+          <option value="低端/量大">低端/走量</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 客户/竞品信息（核心） -->
+    <div class="form-row">
+      <div class="form-group half">
+        <label>🎯 目标客户/零售商（选填但建议填）</label>
+        <input type="text" id="iCustomer" placeholder="如：Walmart、Action、Costco、Lidl 或具体客户名">
+        <div class="hint">AI 会抓取该客户当前在售的同品类 SKU、价格、主推款</div>
+      </div>
+      <div class="form-group half">
+        <label>⚔️ 参考竞品品牌（选填）</label>
+        <input type="text" id="iCompetitors" placeholder="多个品牌用逗号分隔，如：SharkNinja, Xiaomi, TCL">
+        <div class="hint">重点分析这些品牌的产品线和定价</div>
+      </div>
+    </div>
+
+    <!-- 自定义参数 -->
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:8px;">自定义参数（选填）</label>
+      <div class="param-tags" id="paramTags"></div>
+      <span class="add-param" onclick="addParam()">+ 添加参数</span>
+      <div class="hint" style="font-size:11px;color:#94a3b8;margin-top:4px;">如：颜色=多色、重量=500g、功能=可折叠、认证=FDA</div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group full">
+        <label>补充说明（选填）</label>
+        <textarea id="iExtra" rows="2" placeholder="如：我们想做差异化，目前看到市场上大部分是塑料材质的，我们想用竹子替代..."></textarea>
+      </div>
+    </div>
+
+    <button class="btn btn-purple" onclick="genPrompt()">生成调研提问词 →</button>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="card hidden" id="step2Card">
+    <div class="card-title">📋 第二步：复制提问词到任意免费 AI</div>
+    <div class="prompt-box" id="promptBox"></div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;">
+      <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">📋 一键复制提问词</button>
+      <span style="font-size:12px;color:#94a3b8;">复制后打开下面任意免费 AI ↓</span>
+    </div>
+    <div class="ai-links">
+      <a class="ai-link" href="https://www.perplexity.ai/" target="_blank">🔍 Perplexity（推荐）</a>
+      <a class="ai-link" href="https://kimi.moonshot.cn/" target="_blank">🤖 Kimi</a>
+      <a class="ai-link" href="https://chatgpt.com/" target="_blank">💬 ChatGPT</a>
+      <a class="ai-link" href="https://chat.deepseek.com/" target="_blank">🧠 DeepSeek</a>
+      <a class="ai-link" href="https://gemini.google.com/" target="_blank">✨ Gemini</a>
+    </div>
+    <div class="tip-box">
+      💡 <b>强烈建议用 Perplexity</b>，它会自动搜索 Amazon 等平台的实时数据。Kimi 也可以开启联网搜索。如果用 ChatGPT，建议开启「Browse」功能。
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-purple" onclick="goStep(3)">我已拿到回答，下一步 →</button>
+      <button class="rpt-btn" style="padding:14px 20px;" onclick="goStep(1)">← 返回修改</button>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="card hidden" id="step3Card">
+    <div class="card-title">📥 第三步：粘贴 AI 的回答</div>
+    <p style="font-size:13px;color:#64748b;margin-bottom:12px;">把 AI 返回的全部内容复制粘贴到下面：</p>
+    <textarea class="paste-area" id="pasteArea" placeholder="Ctrl+V 粘贴 AI 的回答..."></textarea>
+    <div class="nav-btns">
+      <button class="btn btn-green" onclick="genReport()">生成调研报告</button>
+      <button class="rpt-btn" style="padding:14px 20px;" onclick="goStep(2)">← 返回</button>
+    </div>
+  </div>
+
+  <!-- 报告 -->
+  <div class="card hidden" id="rptCard"></div>
+</div>
+
+<div class="footer">📌 数据由 AI 联网搜索公开信息生成，仅供产品开发参考</div>
+
+<script>
+let savedCat='', savedMarket='';
+
+/* ===== 两级品类数据（参照 Walmart / Action / Costco / Amazon 等大型商超分类） ===== */
+const CATEGORIES = {
+  "🏠 家居日用 Home": [
+    "收纳整理","家纺布艺","家居装饰","清洁用品","灯具照明",
+    "卫浴用品","香薰蜡烛","相框/墙饰","地毯/垫子","衣架/挂钩","镜子","垃圾桶/纸巾盒"
+  ],
+  "🍳 厨房餐饮 Kitchen": [
+    "厨房工具/小件","餐具/碗碟","水杯/水壶/保温杯","厨房收纳","烘焙工具",
+    "刀具/砧板","调味罐/瓶","锅具/煎盘","食品保鲜","开瓶器/小工具","厨房电子秤","隔热垫/锅垫"
+  ],
+  "⚡ 小家电 Small Appliances": [
+    "个护小家电（吹风机/剃须刀/美容仪）","厨房小家电（榨汁机/搅拌机/空气炸锅）",
+    "清洁小家电（吸尘器/扫地机）","环境小家电（加湿器/除湿器/净化器）",
+    "取暖/制冷（暖风机/小风扇/颈挂风扇）","按摩/健康（按摩枪/颈椎按摩器/足浴盆）",
+    "迷你小家电（迷你洗衣机/迷你冰箱）","智能家居（智能插座/灯泡/开关）",
+    "熨烫/缝纫（挂烫机/迷你缝纫机）","其他小家电"
+  ],
+  "🐾 宠物用品 Pet": [
+    "宠物服饰","宠物玩具","宠物喂食/饮水","宠物清洁/美容","宠物窝/垫/笼",
+    "宠物牵引/项圈","猫爬架/猫抓板","宠物出行用品","水族用品","宠物训练用品"
+  ],
+  "💄 美妆个护 Beauty": [
+    "化妆工具/刷具","护肤工具","美发工具/配件","个人护理","美甲工具/贴纸",
+    "化妆包/收纳","假睫毛/美瞳","美容仪器","洗护用品","口腔护理"
+  ],
+  "🏃 户外运动 Sports": [
+    "健身器材/配件","露营/户外装备","骑行装备","水上运动","球类运动",
+    "瑜伽用品","跑步配件","钓鱼用品","登山/徒步","运动防护","滑板/滑雪"
+  ],
+  "👶 母婴儿童 Baby & Kids": [
+    "婴儿喂养","婴儿安全防护","儿童玩具","儿童文具","母婴出行",
+    "婴儿洗护","儿童餐具","早教益智","儿童房装饰","孕妇用品"
+  ],
+  "📱 电子配件 Electronics": [
+    "手机壳/贴膜","充电器/数据线","蓝牙耳机/音箱","电脑/平板配件","智能穿戴配件",
+    "摄影配件","游戏配件","LED灯带/灯串","数码收纳包","投影仪/屏幕配件"
+  ],
+  "🚗 汽车用品 Automotive": [
+    "车载收纳","汽车清洁","车载手机支架","遮阳/防护","汽车装饰",
+    "安全用品","座椅靠垫","后备箱收纳","车载香薰","汽车工具"
+  ],
+  "👗 服装配饰 Fashion": [
+    "包袋/背包","帽子/围巾","首饰/饰品","太阳镜/眼镜","袜子/打底",
+    "手套/腕饰","领带/丝巾","发饰/头饰","钱包/卡包","手表/表带"
+  ],
+  "🧸 玩具游戏 Toys": [
+    "益智/STEM玩具","遥控玩具","模型/拼图","派对/节日用品","桌游/棋牌",
+    "毛绒玩具","户外玩具","解压玩具","DIY手工","积木/拼装"
+  ],
+  "🔧 五金工具 Tools": [
+    "手动工具","测量工具","胶带/粘合","安全防护","紧固件",
+    "工具收纳","管道配件","电气配件","锁具/五金","磨切工具"
+  ],
+  "🌿 园艺用品 Garden": [
+    "园艺工具","花盆/花架","户外装饰","灌溉设备","种植/种子",
+    "防虫/除草","花园照明","篱笆/围栏","BBQ烧烤","户外家具"
+  ],
+  "📎 办公文具 Office": [
+    "办公收纳","书写工具","本册/便签","文件夹/管理","桌面用品",
+    "包装材料","标签/贴纸","计算器/电子","办公椅垫/配件","白板/展示"
+  ],
+  "🎄 节日礼品 Holiday": [
+    "圣诞用品","万圣节用品","生日派对","礼品包装","复活节",
+    "情人节","感恩节","新年/春节","气球/横幅","贺卡/信封"
+  ],
+  "🧳 箱包旅行 Travel": [
+    "行李箱","旅行收纳袋","护照包/证件夹","旅行洗漱包","颈枕/眼罩",
+    "旅行转换插头","便携衣架","旅行水壶","防盗包","行李配件/标签"
+  ],
+  "🎨 DIY手工 Craft": [
+    "缝纫/编织","绘画用品","树脂/滴胶","珠宝制作","纸艺/剪纸",
+    "刺绣/十字绣","蜡烛/皂基DIY","木工DIY","热缩片/粘土","工具套装"
+  ]
+};
+
+/* ===== 品类联动 ===== */
+function initCategories() {
+  const mainSel = document.getElementById('iCatMain');
+  const subSel = document.getElementById('iCatSub');
+  Object.keys(CATEGORIES).forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = cat;
+    mainSel.appendChild(opt);
+  });
+  mainSel.addEventListener('change', () => {
+    const subs = CATEGORIES[mainSel.value] || [];
+    subSel.innerHTML = '<option value="">-- 请选择子品类 --</option>';
+    subs.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      subSel.appendChild(opt);
+    });
+    subSel.disabled = false;
+    updateCatPreview();
+  });
+  subSel.addEventListener('change', updateCatPreview);
+}
+
+function updateCatPreview() {
+  const main = document.getElementById('iCatMain').value;
+  const sub = document.getElementById('iCatSub').value;
+  const preview = document.getElementById('catPreview');
+  if (main && sub) {
+    preview.innerHTML = `<span>${main.replace(/^.\s/,'')} → ${sub}</span>`;
+  } else if (main) {
+    preview.innerHTML = `<span>${main.replace(/^.\s/,'')} → ?</span>`;
+  } else {
+    preview.innerHTML = '';
+  }
+}
+
+/* ===== 目标市场切换 ===== */
+function initMarket() {
+  const sel = document.getElementById('iMarketSel');
+  const custom = document.getElementById('iMarketCustom');
+  sel.addEventListener('change', () => {
+    if (sel.value === '__custom__') {
+      custom.classList.remove('hidden');
+      custom.focus();
+    } else {
+      custom.classList.add('hidden');
+      custom.value = '';
+    }
+  });
+}
+
+function getMarket() {
+  const sel = document.getElementById('iMarketSel');
+  if (sel.value === '__custom__') {
+    return document.getElementById('iMarketCustom').value.trim();
+  }
+  return sel.value;
+}
+
+/* ===== 自定义参数 ===== */
+let paramCount = 0;
+function addParam() {
+  paramCount++;
+  const id = 'p'+paramCount;
+  const tags = document.getElementById('paramTags');
+  const tag = document.createElement('div');
+  tag.className = 'param-tag';
+  tag.id = id;
+  tag.innerHTML = `<input placeholder="参数名" style="width:60px" class="pk"> = <input placeholder="值" style="width:70px" class="pv"> <span class="del" onclick="document.getElementById('${id}').remove()">×</span>`;
+  tags.appendChild(tag);
+  tag.querySelector('.pk').focus();
+}
+
+function getParams() {
+  const tags = document.querySelectorAll('.param-tag');
+  const list = [];
+  tags.forEach(t => {
+    const k = t.querySelector('.pk')?.value.trim();
+    const v = t.querySelector('.pv')?.value.trim();
+    if (k && v) list.push(`${k}：${v}`);
+  });
+  return list;
+}
+
+/* ===== 步骤 ===== */
+function goStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('s'+i).className = 'step'+(i<n?' done':i===n?' active':'');
+    const card = document.getElementById(['','step1Card','step2Card','step3Card'][i]);
+    if (card) card.classList.toggle('hidden', i!==n);
+  });
+  document.getElementById('rptCard').classList.add('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ===== 生成提问词（根据调研目的动态组装） ===== */
+function genPrompt() {
+  const catMainRaw = document.getElementById('iCatMain').value.trim();
+  const catSub = document.getElementById('iCatSub').value.trim();
+  const market = getMarket();
+  if (!catMainRaw) { alert('请选择大品类'); return; }
+  if (!catSub) { alert('请选择子品类'); return; }
+  if (!market) { alert('请选择或输入目标市场'); return; }
+
+  const catMain = catMainRaw.replace(/^.\s/,'');
+  const catDetail = document.getElementById('iCatDetail').value.trim();
+  const catLabel = catDetail || catSub;
+  savedCat = catLabel; savedMarket = market;
+
+  const purpose = document.querySelector('input[name="purpose"]:checked').value;
+  const name = document.getElementById('iName').value.trim();
+  const material = document.getElementById('iMaterial').value.trim();
+  const size = document.getElementById('iSize').value.trim();
+  const price = document.getElementById('iPrice').value.trim();
+  const channel = document.getElementById('iChannel').value;
+  const position = document.getElementById('iPosition').value;
+  const customer = document.getElementById('iCustomer').value.trim();
+  const competitors = document.getElementById('iCompetitors').value.trim();
+  const extra = document.getElementById('iExtra').value.trim();
+  const params = getParams();
+
+  const purposeLabel = {basic:'📚 基础调研（全品类市场全景）', develop:'🚀 新品开发（找机会点与差异化）', target:'🎯 客户/竞品抓取（聚焦具体客户在售SKU）'}[purpose];
+
+  let info = `【调研目的】${purposeLabel}\n【大品类】${catMain}\n【子品类】${catSub}`;
+  if (catDetail) info += `\n【具体产品】${catDetail}`;
+  info += `\n【目标市场】${market}`;
+  if (name) info += `\n【品名】${name}`;
+  if (material) info += `\n【材质】${material}`;
+  if (size) info += `\n【尺寸规格】${size}`;
+  if (price) info += `\n【预估出厂价】${price}`;
+  if (channel) info += `\n【目标渠道】${channel}`;
+  if (position) info += `\n【目标定位】${position}`;
+  if (customer) info += `\n【目标客户/零售商】${customer}`;
+  if (competitors) info += `\n【参考竞品品牌】${competitors}`;
+  if (params.length) info += `\n【其他参数】${params.join('、')}`;
+  if (extra) info += `\n【补充说明】${extra}`;
+
+  // ========= 统一的真实性约束（硬性要求，始终放在开头） =========
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('zh-CN');
+  const oneYearAgo = new Date(today.getFullYear()-1, today.getMonth(), today.getDate()).toLocaleDateString('zh-CN');
+
+  const reliabilityHeader = `⚠️ 信息真实性要求（必须严格遵守，否则报告无效）：
+
+1. **数据必须真实可查** — 所有品牌、SKU、价格、销量、评价数、链接必须是通过联网搜索获取的真实公开信息，禁止编造任何数字、品牌名、产品链接或 ASIN/SKU。
+2. **时效性要求** — 优先引用 ${oneYearAgo} 至今（近半年到一年内）的最新数据。超过 2 年的旧数据请明确标注原始发布日期，读者自行判断是否采用。
+3. **查不到就承认** — 如果某项信息联网搜索不到公开来源，请直接写"[未查到公开信息]"，不要用"推测"来填充真实数据字段（如销量、价格）。
+4. **推测必须标注** — 若基于行业常识做合理推断，必须以"[推测]"开头并简要说明推测依据。
+5. **标注来源** — 每一项关键数据（价格、销量、评价数、趋势数据等）尽量附上来源平台（如 Amazon US / 日本乐天 / Statista / Euromonitor）和查询日期。
+6. **今日日期：** ${dateStr}，请以此为基准判断数据时效性。
+
+---
+
+`;
+
+  // ========= 根据调研目的，构建不同的正文 =========
+  let body = '';
+
+  // 客户/竞品模块（所有目的通用，但目标模式下会大幅强化）
+  const amazonPlat = market.includes('日本')?'Amazon JP、乐天、Yahoo':market.includes('东南亚')?'Shopee、Lazada':market.includes('欧洲')||market.includes('德国')||market.includes('英国')||market.includes('法国')?'Amazon 对应国站':'Amazon US';
+  const retailPlat = market.includes('美国')?'Walmart、Target、Costco、Home Depot、Lowes':market.includes('欧洲')||market.includes('德国')?'Action、Lidl、Aldi、Kaufland、OBI、IKEA':market.includes('日本')?'Don Quijote、7-11、ロフト':'当地主要零售渠道';
+
+  if (purpose === 'basic') {
+    // ===== 基础调研：全景 9 节 =====
+    body = `请基于上述信息，输出一份完整的基础调研报告，用 ## 标题分节。
+
+## 1. 市场概况与趋势
+- ${catLabel}在${market}市场的规模（金额/销量）、近1-2年增长率
+- 趋势关键词（近6-12个月热搜词/社交媒体话题）
+- 季节性特征（旺季/淡季月份）
+- 数据请标注来源和日期
+
+## 2. 竞品分析（Top 5-10 畅销款）
+请搜索 ${amazonPlat} 等平台上${catLabel}的畅销竞品，**用表格输出**：
+| 品牌/产品名 | 售价 | 月销量/评价数 | 核心卖点 | 主要好评 | 主要差评/痛点 | 数据日期 |
+${competitors ? `\n重点分析这些品牌：${competitors}` : ''}
+${customer ? `\n**同时搜索 ${customer} 当前在售的 ${catLabel}，列出主要SKU、售价、主推款（也用表格输出）**` : ''}
+
+## 3. 价格带分析
+- ${market}市场${catLabel}的终端零售价分布（低/中/高端分别多少钱）
+- 主流价格带（销量最集中的价位）
+- ${price ? `我们出厂价${price}，分析终端定价空间` : '不同定位的定价建议'}
+
+## 4. 产品卖点提炼
+- 基础卖点（必须有的功能）
+- 差异化卖点（从竞品中脱颖而出）
+- 情感/场景卖点
+- 核心 Listing 关键词（5-10个高搜索量词）
+
+## 5. 用户画像与消费场景
+- 目标用户画像（年龄/性别/收入/生活方式）
+- 主要购买动机、核心使用场景
+- 购买决策因素 Top 3-5
+
+## 6. 认证与合规
+- ${market}市场需要的认证（FDA/CE/PSE/ASTM等）
+- 包装标签、环保法规、专利风险
+
+## 7. 供应链与成本参考
+- ${catLabel}的中国产业带分布
+- 行业平均出厂价区间、主要成本构成
+
+## 8. 产品开发建议
+- 推荐开发方向 2-3 个、差异化策略、包装品牌建议、定价策略、风险提示
+
+## 9. 信息来源说明
+- 每节主要数据的来源平台和查询日期
+- 列出 [推测] 和 [未查到公开信息] 的项目清单`;
+
+  } else if (purpose === 'develop') {
+    // ===== 新品开发：聚焦机会点与差异化 =====
+    body = `请基于上述信息，输出一份**面向新品开发**的调研报告，重点挖掘市场机会和差异化空间。用 ## 标题分节。
+
+## 1. 市场机会判断
+- ${catLabel}在${market}市场当前的生命周期阶段（蓝海/成长/成熟/衰退）
+- 近6-12个月的新兴需求和未被满足的需求
+- 值得切入的细分方向
+- 建议切入/观望/放弃的明确判断
+
+## 2. 畅销竞品深度拆解（Top 8-10 款）
+请搜索 ${amazonPlat}${customer?'、以及'+customer:''} 等渠道上${catLabel}的畅销款，**用表格输出**：
+| 品牌/产品名 | 售价 | 月销量/评价数 | 核心功能点 | 主要差评/用户抱怨 | 改进机会 | 数据日期 |
+${competitors ? `\n重点拆解这些品牌的产品线：${competitors}` : ''}
+
+## 3. 用户痛点深挖（开发核心输入）
+从竞品的差评、论坛、社交媒体中提炼：
+- **高频痛点 Top 5-8**（每个痛点附 2-3 条真实差评原文摘录或链接）
+- 每个痛点对应的产品改进方向
+- 哪些痛点是目前所有竞品都没解决的（= 差异化机会）
+
+## 4. 产品差异化设计建议
+- 基于痛点的 2-3 个具体开发方向（附具体功能/材质/结构描述）
+- 每个方向的市场空间估计和预期定价
+- 包装、外观、品牌调性建议（匹配${market}审美）
+
+## 5. 卖点矩阵与关键词
+- 基础卖点 / 差异化卖点 / 情感卖点
+- Listing/广告关键词（5-10 个）
+
+## 6. 认证与合规
+- ${market}必需认证（FDA/CE/PSE/ASTM等）、包装/标签要求、专利风险点
+
+## 7. 供应链与成本参考
+- 中国产业带、行业出厂价区间、建议的 BOM 成本结构
+
+## 8. 开发决策建议
+- **Go/No-Go 判断**：是否建议开发？理由？
+- 建议的开发优先级和时间窗口
+- 首单建议起订量、初期验证渠道
+
+## 9. 信息来源
+- 所有关键数据的来源和日期、[推测] 与 [未查到公开信息] 清单`;
+
+  } else if (purpose === 'target') {
+    // ===== 客户/竞品抓取：聚焦具体客户/零售商 =====
+    const customerBlock = customer
+      ? `# 核心调研对象：${customer}`
+      : `# 核心调研对象：${market}市场${catLabel}的 Top 零售商/客户`;
+
+    body = `请基于上述信息，输出一份**聚焦客户/竞品的产品抓取报告**，核心目标：摸清具体客户/零售商当前在卖什么、什么价格、主推哪些款。用 ## 标题分节。
+
+${customerBlock}
+
+## 1. 客户/渠道概况
+${customer
+  ? `- ${customer} 在${market}市场的市场地位、门店数/用户量、定位档次
+- 该客户的采购特点和选品偏好（基于公开信息）
+- 该客户的主要竞争对手（同档次零售商）`
+  : `- ${market}市场${catLabel}品类的 Top 5-8 零售商/采购商
+- 每家的市场份额、定位、主要销售渠道（线下/线上）
+- 建议优先跟进的 2-3 家（附理由）`}
+
+## 2. 在售 SKU 清单（重点，必须详尽）
+${customer
+  ? `请联网搜索 ${customer} 官网/Amazon店铺/旗下电商 上当前在售的${catLabel}，**用表格列出 10-20 个 SKU**：
+| 产品名/SKU | 品牌（自有/外部） | 售价 | 尺寸/规格 | 核心卖点 | 评价数/评分 | 上架时间 | 主推/常规 | 数据日期 |`
+  : `请联网搜索 ${retailPlat} 等渠道上${catLabel}的 Top 20 热销产品，**用表格列出**：
+| 销售渠道 | 产品名/SKU | 品牌 | 售价 | 规格 | 月销/评价数 | 核心卖点 | 数据日期 |`}
+
+${competitors ? `\n**并同步列出这些竞品品牌的在售款：${competitors}**（用同样表格格式）` : ''}
+
+## 3. 价格带与主推款分析
+- 这些 SKU 的价格带分布（画出高/中/低档比例）
+- 哪些是主推款（Best Seller / Deal / Amazon's Choice / 显眼陈列）
+- 主推款的共同特征（材质/功能/包装/颜色）
+- 该客户/市场的主流出厂价推测（终端价 ÷ 加价倍数）
+
+## 4. 竞对零售商在卖什么
+${customer
+  ? `- ${customer} 的 2-3 个主要竞对（同档次零售商）在同品类下的热销 SKU
+- 用表格对比：${customer} vs 竞对在该品类的 SKU 数、价格带、主推款差异`
+  : `- ${market}市场${catLabel} Top 3-5 卖家的头部 SKU 横向对比表`}
+
+## 5. 产品机会清单（我们能推什么）
+${price ? `基于我们的出厂价 ${price}，` : ''}给出：
+- 该客户/市场目前有明显价格空档的规格/款式
+- 该客户/市场目前缺失或供给不足的子品类/功能
+- 建议向该客户推荐的 2-3 个具体产品方向（附预估终端定价）
+
+## 6. 切入策略建议
+- 该客户的采购节奏/时间窗口（如有公开信息）
+- 联系方式/采购部门线索（如有公开信息）
+- 初次推荐时应突出的卖点和价格锚点
+
+## 7. 信息来源与数据日期
+- 所有 SKU 数据的抓取来源（官网URL/Amazon店铺/Walmart.com等）和查询日期
+- [推测] 和 [未查到公开信息] 清单`;
+  }
+
+  const prompt = reliabilityHeader + `【调研输入信息】\n${info}\n\n---\n\n` + body;
+
+  document.getElementById('promptBox').textContent = prompt;
+  goStep(2);
+}
+
+/* ===== 复制 ===== */
+function copyPrompt() {
+  const text = document.getElementById('promptBox').textContent;
+  const btn = document.getElementById('copyBtn');
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ 已复制！去粘贴到 AI';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 一键复制提问词'; btn.classList.remove('copied'); }, 3000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    btn.textContent = '✅ 已复制！'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 一键复制提问词'; btn.classList.remove('copied'); }, 3000);
+  });
+}
+
+/* ===== 生成报告 ===== */
+function genReport() {
+  const raw = document.getElementById('pasteArea').value.trim();
+  if (!raw) { alert('请先粘贴 AI 的回答'); return; }
+  if (raw.length < 100) { alert('内容太短，请确认已完整粘贴'); return; }
+  const sections = parseSections(raw);
+  renderReport(sections, raw);
+}
+
+function parseSections(md) {
+  const lines = md.split('\n'), out = []; let cur = null;
+  for (const ln of lines) {
+    const m = ln.match(/^#{2,3}\s+\d*\.?\s*(.*)/);
+    if (m) { if (cur) out.push(cur); cur = { title: m[1].trim(), body: '' }; }
+    else if (cur) cur.body += ln + '\n';
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+function renderReport(sections, raw) {
+  const card = document.getElementById('rptCard');
+  card.classList.remove('hidden');
+  [1,2,3].forEach(i => document.getElementById(['','step1Card','step2Card','step3Card'][i]).classList.add('hidden'));
+  document.getElementById('s1').className = 'step done';
+  document.getElementById('s2').className = 'step done';
+  document.getElementById('s3').className = 'step done';
+
+  const icons = ['📊','⚔️','💰','✨','👤','📋','🔗','🚀','📌'];
+  let h = `<div class="rpt-head">
+    <div>
+      <h2>📋 ${esc(savedCat)} · 产品调研报告</h2>
+      <div style="font-size:12px;color:#94a3b8;margin-top:4px;">目标市场：${esc(savedMarket)} · ${new Date().toLocaleString('zh-CN')}</div>
+    </div>
+    <div class="rpt-actions">
+      <button class="rpt-btn" onclick="copyAll()">📋 复制全文</button>
+      <button class="rpt-btn primary" onclick="window.print()">🖨️ 打印/PDF</button>
+      <button class="rpt-btn" onclick="goStep(1)">🔄 新调研</button>
+    </div>
+  </div>`;
+
+  if (sections.length >= 3) {
+    sections.forEach((sec, i) => {
+      h += `<div class="section">
+        <div class="sec-hd" onclick="toggleSec(this)">
+          <h3>${icons[i]||'📄'} ${esc(sec.title)}</h3>
+          <span class="arr">▼</span>
+        </div>
+        <div class="sec-bd">${mdToHtml(sec.body)}</div>
+      </div>`;
+    });
+  } else {
+    h += `<div class="sec-bd">${mdToHtml(raw)}</div>`;
+  }
+
+  h += `<div class="disclaimer">⚠️ <b>免责声明：</b>本报告由 AI 基于公开信息生成。标注"[推测]"为合理推断，"[未查到公开信息]"表示未能获取。仅供产品开发参考，重要决策请结合实际市场调研。</div>`;
+  h += `<textarea id="rawAll" style="position:absolute;left:-9999px">${esc(raw)}</textarea>`;
+  card.innerHTML = h;
+  card.scrollIntoView({behavior:'smooth'});
+}
+
+function mdToHtml(md) {
+  let h = md
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g,'<em>$1</em>')
+    .replace(/^####?\s+(.*)/gm,'<h4>$1</h4>')
+    .replace(/^[-*]\s+(.*)/gm,'<li>$1</li>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" style="color:#7c3aed">$1</a>')
+    .replace(/\[未查到公开信息\]/g,'<span class="tag red">[未查到公开信息]</span>')
+    .replace(/\[推测\]/g,'<span class="tag yellow">[推测]</span>');
+  h = h.replace(/\|(.+)\|\n\|[-| ]+\|\n((?:\|.+\|\n?)+)/g, (match, header, rows) => {
+    const ths = header.split('|').filter(s=>s.trim()).map(s=>`<th>${s.trim()}</th>`).join('');
+    const trs = rows.trim().split('\n').map(row => {
+      const tds = row.split('|').filter(s=>s.trim()).map(s=>`<td>${s.trim()}</td>`).join('');
+      return `<tr>${tds}</tr>`;
+    }).join('');
+    return `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+  });
+  h = h.replace(/(<li>.*?<\/li>\n?)+/gs, m=>'<ul>'+m+'</ul>');
+  h = h.replace(/\n\n+/g,'</p><p>');
+  h = '<p>'+h+'</p>';
+  h = h.replace(/<p>\s*<\/p>/g,'').replace(/<p>\s*<ul>/g,'<ul>').replace(/<\/ul>\s*<\/p>/g,'</ul>')
+       .replace(/<p>\s*<h4>/g,'<h4>').replace(/<\/h4>\s*<\/p>/g,'</h4>')
+       .replace(/<p>\s*<table>/g,'<table>').replace(/<\/table>\s*<\/p>/g,'</table>');
+  return h;
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toggleSec(hd) { const bd=hd.nextElementSibling; bd.classList.toggle('off'); hd.querySelector('.arr').textContent=bd.classList.contains('off')?'▶':'▼'; }
+function copyAll() {
+  const el=document.getElementById('rawAll'); if(!el) return;
+  navigator.clipboard.writeText(el.value).then(()=>alert('已复制！')).catch(()=>{
+    el.style.left='0'; el.select(); document.execCommand('copy'); el.style.left='-9999px'; alert('已复制！');
+  });
+}
+
+/* ===== 初始化 ===== */
+document.addEventListener('DOMContentLoaded', () => {
+  initCategories();
+  initMarket();
+});
+</script>
+</body>
+</html>
