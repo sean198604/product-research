@@ -37,4 +37,4 @@ cd product-research
 docker-compose up -d
 ```
 
-访问 `http://192.168.1.246:7005`
+访问 `http://localhost:7005`；局域网部署请替换为实际服务器地址。
