@@ -1,5 +1,3 @@
-<p align="center"><img src="assets/readme-cover.png" alt="Product Research project cover" width="100%" /></p>
-
 # 产品市场调研工具 (Product Research)
 
 外贸产品市场调研辅助工具，帮助分析产品在目标市场的竞争格局和机会。
